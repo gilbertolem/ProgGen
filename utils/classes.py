@@ -1,16 +1,8 @@
-#####################################################################################################################
-# Imports
-#####################################################################################################################
+from maps.definitions import *
+from pickle import load
 
-# from helper import *
-from definitions import *
+simple_kind = load(open('maps/simple_kind.txt','rb'))
 
-#####################################################################################################################
-# Chord class. Chords are formed by two parts. Both parts have a vector representation of 0's and 1's.
-#   -Pitch: refers to the root note
-#   -Kind: refers to the color of the chord (minor, sus4, m7b5b9, etc.)
-#####################################################################################################################
- 
 class Chord():
     
     def __init__(self, harmony, note, shift):
@@ -46,17 +38,6 @@ class Chord():
 
     def __str__(self):
         return self.text
-
-
-
-
-#####################################################################################################################
-# Tune class. Tunes have a key and a mode. Both have vector representations of 0's and 1's.
-#   -Key: the root note of the key
-#   -Mode: if the key is major or minor
-# Also, the Tune class has a list called 'chords', which contains lists which represent measures, and each measure has
-# some Chord objects
-#####################################################################################################################
  
 class Tune():
     
@@ -67,7 +48,9 @@ class Tune():
         self.num_measures = len(tree.find('part').findall('measure'))
         self.structure = self.get_structure(tree)
         self.author = self.get_author(tree)
-        
+        self.style  = self.get_style(tree)
+        self.key = self.get_key(tree)
+    
     # Get the vector of Chord objects, from an xml, considering repetitions and endings
     def get_structure(self, tree):
         num_measures = len(tree.find('part').findall('measure'))
@@ -110,7 +93,40 @@ class Tune():
             if creator.attrib['type']=='composer':
                 return creator.text
         return ""
+        
+    def get_style(self, tree):
+        for creator in tree.find('identification').findall('creator'):
+            if creator.attrib['type']=='lyricist':
+                return creator.text
+        return ""
+        
+    # Get values of key and mode from xml
+    def get_key(self, tree):
+        
+        for measure in tree.find('part').findall('measure'):        
+            
+            # The key and mode are always specified in the first measure
+            if measure.attrib['number']=="1":
                 
+                # The key pitch is specified in the form of fifths from C. Can be positive or negative
+                fifths = int(measure.find('attributes').find('key').find('fifths').text)
+                if fifths < 0:
+                    return (-fifths*5)%12
+                else:
+                    return (fifths*7)%12
+    
+    def matrix_form(self, words_text2num):
+        matrix = []
+        for s in self.structure:
+            one_hot = [0 for _ in range(len(words_text2num))]
+            one_hot[words_text2num[s]] = 1
+            matrix.append(one_hot)
+        return matrix
+    
+    # Length (of the structure)
+    def __len__(self):
+        return len(self.structure)
+    
     # String representation (readable) of the Tune object
     def __str__(self):
         s = self.title + "\n"

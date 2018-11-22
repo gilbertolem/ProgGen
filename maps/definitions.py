@@ -1,5 +1,3 @@
-from pickle import dump, load
-
 ###################### Pitch definitions ######################
 
 # Durations
@@ -57,8 +55,3 @@ pitch_num2text[8] = 'Ab'
 pitch_num2text[9] = 'A'
 pitch_num2text[10] = 'Bb'
 pitch_num2text[11] = 'B'
-
-# Load dictionaries 
-simple_kind = load( open('Dictionaries/simple_kind.txt', 'rb'))
-words_text2num = load(open('Dictionaries/words_text2num.txt','rb'))
-words_num2text = load(open('Dictionaries/words_num2text.txt','rb'))
