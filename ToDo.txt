@@ -1,10 +1,4 @@
-- Define architecture
-
-Should I train a unified model and after that generate with filters?
-Or should I train a model for each filter combination?
-
-The first would help being more aware of music structure! But how do I do it?
-
-Start with simply using an LSTM or GRU model with a next_chord classifier
-
-https://arxiv.org/pdf/1712.00170.pdf 
+- Write pretty_printer
+- Try different architectures (layers, hidden_size, FC layers, dropout)
+- Try GRU instead of LSTM
+- Try VAEs or GANs? VGAN? https://arxiv.org/pdf/1712.00170.pdf 

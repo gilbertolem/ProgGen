@@ -2,9 +2,8 @@
 # Imports
 #####################################################################################################################
 
-import torch as tt
+import torch
 import torch.nn as nn
-import torch.optim as opt
 import torch.nn.functional as F
 
 #####################################################################################################################
@@ -13,23 +12,19 @@ import torch.nn.functional as F
 
 class ProgGen(nn.Module):
     
-    def __init__(self, num_inputs, num_layers):
+    def __init__(self, input_size, hidden_size, num_layers, dropout = 0.5):
         super(ProgGen, self).__init__()
-        
-        self.lstm = nn.LSTM(num_inputs, num_inputs, num_layers)
+        self.hidden_size = hidden_size
+        # LSTM Multilayer. Receives (Seq x Batch x Features), Outputs (Seq x Batch x Hidden Size)
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, dropout = dropout)
+
+        # Receives (Seq*Batch x Hidden Size), outputs (Seq*Batch x input_size)
+        self.fc1 = nn.Linear(hidden_size, input_size)
         
     def forward(self, x):
         
-        n_chords = x.size(0)
+        x, _ = self.lstm(x)
+        x = x.view(-1, self.hidden_size)
+        x = self.fc1(x)
         
-        y = tt.zeros_like(x)
-        
-        for i in range(n_chords):
-            out, _ = self.lstms[str(i)](x[:(i+1),:,:])
-            y[i,:,:] = out[-1,:,:]
-            
-        y1 = self.softmax(y[:,:,0:12])
-        y2 = self.softmax(y[:,:,12:])
-        y = tt.cat( (y1, y2), 2)
-        
-        return y
+        return x

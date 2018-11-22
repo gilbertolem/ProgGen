@@ -23,7 +23,7 @@ def musicxml2tensor(xml_directory, words_text2num, mode = "original", filters = 
     Outputs:
         data: pytorch tensor with the dataset in one-hot form
     """
-    
+    print("\nCREATING TENSORS FROM MUSICXML FILES...")
     # Read all tunes from the xml_directory and create a list of Tune classes
     tunes = []
     for file in listdir(xml_directory):
@@ -63,6 +63,8 @@ def musicxml2tensor(xml_directory, words_text2num, mode = "original", filters = 
     for i, tune in enumerate(tunes):
         matrix = torch.tensor(tune.matrix_form(words_text2num))
         tunes_tensor[0:len(matrix), i, :] = matrix
+    
+    print("\t{} tunes succesfully loaded.".format(len(tunes)))
     
     return tunes_tensor
     
