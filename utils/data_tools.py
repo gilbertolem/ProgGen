@@ -1,10 +1,24 @@
 from os import listdir
 from pickle import dump
 import torch
+from torch.utils.data import Dataset
 import xml.etree.ElementTree as ET
 from random import shuffle
 
 import utils.classes as classes
+
+class TuneData(Dataset):
+    
+    def __init__(self, X):
+        self.X = X
+        self.Y = torch.argmax(torch.cat( (X[1:], X[0].unsqueeze(0) ) ), 2)
+    
+    def __getitem__(self, index):
+        return self.X[:, index, :], self.Y[:, index]
+        
+    def __len__(self):
+        return self.X.size(1)
+
 
 def musicxml2tensor(xml_directory, words_text2num, mode = "original", filters = {'author':None, 'style':None}):
     

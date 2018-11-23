@@ -12,16 +12,16 @@ vocab_size = len(words_text2num)
 
 # Create training data
 mode = "all_keys"
-filters = {'author':'Charlie Parker', 'style':None}
+filters = {'author':None, 'style':None}
 X = tools.musicxml2tensor(xml_directory, words_text2num, mode = mode, filters = filters) # (Seq x Batch x vocab_size)
 Y = torch.cat( (X[1:], X[0].unsqueeze(0)) )
 Y_target = torch.argmax(Y.view(-1, vocab_size), 1)
 
 # Construct Neural Net
 input_size = vocab_size
-hidden_size = 256
-num_layers = 1
-dropout = 0
+hidden_size = 512
+num_layers = 4
+dropout = 0.5
 model = ProgGen(input_size, hidden_size, num_layers, dropout)
 
 # Define loss function and optimizer
@@ -38,9 +38,7 @@ for epoch in range(epochs):
     
     # Forward pass
     logits = model(X)
-    
     loss = loss_fn(logits, Y_target)
-        
     train_loss.append( loss.item() )
     
     # Print to terminal
