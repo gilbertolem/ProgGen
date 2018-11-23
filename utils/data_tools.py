@@ -74,6 +74,7 @@ def musicxml2tensor(xml_directory, words_text2num, mode = "original", filters = 
 
     # Create and fill tensor (Sequence x Batch x Feature)
     tunes_tensor = torch.zeros(max_len, len(tunes), len(words_text2num))
+    tunes_tensor[:,:,0] = torch.ones(max_len, len(tunes))       # Initialize all the tensor with first word (blank)
     for i, tune in enumerate(tunes):
         matrix = torch.tensor(tune.matrix_form(words_text2num))
         tunes_tensor[0:len(matrix), i, :] = matrix

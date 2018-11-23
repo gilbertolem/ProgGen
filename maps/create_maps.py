@@ -32,6 +32,7 @@ def create_word_dictionary():
             superstructure += t.structure
 
     different_words = list(set(superstructure))
+    different_words = ['']+different_words          # This ensure that index 0 leads to nothing
     words_text2num = {text:num for num, text in enumerate(different_words)}
     words_num2text = {num:text for num, text in enumerate(different_words)}
     dump(words_text2num, open('maps/words_text2num.txt','wb'))
