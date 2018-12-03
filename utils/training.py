@@ -4,12 +4,12 @@ import torch
 def train(epochs, model, optim, loader, loss_fn, use_gpu):
     
     # X, Y_target = loader
-    
+    model.train()
     train_loss = []
     print("\n--------------------------------------------------------------------")
     print("TRAINING MODEL...", "\n\n   Epoch |", "Training Loss |")
     N = len(loader)
-    for epoch in range(epochs):
+    for epoch in range(epochs+1):
         
         avg_loss = 0.0
         for n, batch in enumerate(loader):
