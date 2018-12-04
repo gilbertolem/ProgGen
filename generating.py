@@ -3,9 +3,23 @@ import torch
 from numpy import argsort
 from sys import argv
 
+def get_pad(chord, reduce = True):
+    dur = int(chord[0])
+    if dur>=1 and reduce:
+        dur = int(dur/2)
+    L = len(chord)-1
+
+    pad = ''
+    N = dur*7 + dur + 1
+    for _ in range(N-L):
+        pad += ' '
+    return pad
+
 class Progression():
+
     def __init__(self, structure):
         self.structure = structure
+        
     def __str__(self):
         
         structure = self.structure
@@ -19,25 +33,27 @@ class Progression():
             if not self.is_chord(thing):
                 grouped_structure.append(thing)
             else:
-                if int(thing[0])==4:
-                    grouped_structure.append([thing[1:]])
+                dur += int(thing[0])
+                if dur>4 and int(thing[0])==4:
+                    grouped_structure.append(compas)
+                    grouped_structure.append('|')
+                    grouped_structure.append([thing])
+                    grouped_structure.append('|')
+                    compas = []
+                    dur = 0
+                elif dur>4 and int(thing[0])==2:
+                    grouped_structure.append(compas)
+                    grouped_structure.append('|')
+                    compas = [thing]
+                    dur = int(thing[0])
+                elif dur==4:
+                    compas.append(thing)
+                    grouped_structure.append(compas)
                     grouped_structure.append('|')
                     dur = 0
+                    compas = []
                 else:
-                    dur += int(thing[0])
-                    if dur>4:
-                        grouped_structure.append(compas)
-                        grouped_structure.append('|')
-                        compas = [thing[1:]]
-                        dur = int(thing[0])
-                    elif dur==4:
-                        compas.append(thing[1:])
-                        grouped_structure.append(compas)
-                        grouped_structure.append('|')
-                        dur = 0
-                        compas = []
-                    else:
-                        compas.append(thing[1:])
+                    compas.append(thing)
         
         # Make string from grouped structure
         s = ""
@@ -71,13 +87,15 @@ class Progression():
     def is_chord(self, ch):
         return len(ch)>0 and ch[0] in ['1','2','4']
 
-    def compas_to_text(self, compas):
+    def compas_to_text(self, compas, reduce = True):
         s = ""
         for chord in compas:
-            s += chord + " "
+            if int(chord[0]) == 1 and reduce==True:
+                return self.compas_to_text(compas, False)
+            s += chord[1:] + get_pad(chord, reduce)
         return s[:-1]
         
-def generate_progression(initial_chord = "4C_maj", tune_len = 32, top = 1, model_name = 'model', verbose = False):
+def generate_progression(initial_chord = "4C_maj", tune_len = 32, top = 1, model_name = 'model', use_gpu = False, verbose = False):
     
     # Load model and vocabulary
     model = torch.load('models/'+model_name+'.pt')
@@ -94,8 +112,10 @@ def generate_progression(initial_chord = "4C_maj", tune_len = 32, top = 1, model
         predictions = [idx]
 
         for n in range(tune_len):
-            
-            logits = model(x)       # input: [1+n x 1 x vocab_size];  output: [(1+n)*1 x vocab_size]
+
+            x_c = x.cuda() if use_gpu else x
+
+            logits = model(x_c)       # input: [1+n x 1 x vocab_size];  output: [(1+n)*1 x vocab_size]
             p = torch.nn.functional.softmax(logits, dim=1)[-1]      # output: [vocab_size]
             p[argsort(p)[:-top]] = 0
             p /= torch.sum(p)

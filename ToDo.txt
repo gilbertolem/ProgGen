@@ -1,5 +1,0 @@
-- Write pretty_printer
-- Validation set?
-- Try different architectures (layers, hidden_size, FC layers, dropout)
-- Try GRU instead of LSTM
-- Try VAEs or GANs? VGAN? https://arxiv.org/pdf/1712.00170.pdf 
