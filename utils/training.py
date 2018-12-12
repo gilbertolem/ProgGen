@@ -72,7 +72,7 @@ def train(epochs, model, optim, train_loader, val_loader, loss_fn, use_gpu, mode
         val_loss = evaluate(model, optim, val_loader, loss_fn, use_gpu)
         
         # Print to terminal
-        print("{:>8} | {:13} | {:9}".format(round(float(epoch),0), round(train_loss,2), round(val_loss,2) ) )
+        print("{:>8} | {:13} | {:9}".format(epoch, round(train_loss,2), round(val_loss,2) ) )
         
         train_losses.append( train_loss )
         val_losses.append( val_loss )

@@ -123,6 +123,12 @@ class Tune():
             matrix.append(one_hot)
         return matrix
     
+    def index_form(self, words_text2num):
+        indexes = []
+        for s in self.structure:
+            indexes.append(words_text2num[s])
+        return indexes
+    
     # Length (of the structure)
     def __len__(self):
         return len(self.structure)

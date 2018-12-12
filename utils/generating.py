@@ -105,17 +105,13 @@ def generate_progression(initial_chord = "4C_maj", tune_len = 32, top = 1, model
     model.eval()
     with torch.no_grad():
         
-        # Transform initial_chord to tensor (1 x 1 x vocab_size)
-        x = torch.zeros(1, 1, vocab_size)
+        # Transform initial_chord to tensor (1 x 1)
         idx = words_text2num[initial_chord]
-        x[0, 0, idx] = 1.0
+        x = torch.LongTensor([idx]).view(1,1)
         predictions = [idx]
-
         for n in range(tune_len):
-
             x_c = x.cuda() if use_gpu else x
-
-            logits = model(x_c)       # input: [1+n x 1 x vocab_size];  output: [(1+n)*1 x vocab_size]
+            logits = model(x_c)       # input: [1+n x 1];  output: [(1+n)*1 x vocab_size]
             p = torch.nn.functional.softmax(logits, dim=1)[-1]      # output: [vocab_size]
             p[argsort(p)[:-top]] = 0
             p /= torch.sum(p)
@@ -123,8 +119,7 @@ def generate_progression(initial_chord = "4C_maj", tune_len = 32, top = 1, model
             idx = torch.multinomial(p,1).item()
             predictions.append(idx)
             
-            new_x = torch.zeros(1, 1, vocab_size)
-            new_x[0, 0, idx] = 1.0
+            new_x = torch.LongTensor([idx]).view(1,1)
             
             x = torch.cat( (x, new_x), 0)
         
