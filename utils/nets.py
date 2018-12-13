@@ -7,36 +7,31 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 #####################################################################################################################
-# Simple LSTM classifier with only one layer
+# Weighted CrossEntropy Loss, for combining authors and styles
 #####################################################################################################################
 
-class ProgGen(nn.Module):
+class Weighted_Loss(nn.Module):
     
-    def __init__(self, vocab_size, hidden_size, num_layers, dropout = 0.5):
-        super(ProgGen, self).__init__()
+    def __init__(self, weights):
+        super(Weighted_Loss,self).__init__()
+        self.weights = weights
         
-        self.hidden_size = hidden_size
-        self.embed = torch.nn.Embedding(vocab_size, hidden_size)
-        
-        # LSTM Multilayer. Receives (Seq x Batch x Features), Outputs (Seq x Batch x Hidden Size)
-        self.lstm = nn.LSTM(hidden_size, hidden_size, num_layers, dropout = dropout)
+    def forward(self, input, target, classes):
+        weights = torch.Tensor([weights[i] for i in classes])
+        element_loss = F.cross_entropy(input, target, reduction='none')
+        return (weights*element_loss).mean()
 
-        # Receives (Seq*Batch x Hidden Size), outputs (Seq*Batch x input_size)
-        self.fc1 = nn.Linear(hidden_size, vocab_size)
-        
-    def forward(self, idxs):
-        x = self.embed(idxs)
-        x, _ = self.lstm(x)
-        x = x.view(-1, self.hidden_size)
-        x = self.fc1(x)
-        return x
-        
+#####################################################################################################################
+# RNN generator, with embedding
+#####################################################################################################################
+
 class ProgGen_RNN(nn.Module):
     
     def __init__(self, rnn_type, vocab_size, embed_size, hidden_size, num_layers, dropout = 0.5, bidirectional = False):
         super(ProgGen_RNN, self).__init__()
         
         self.hidden_size = hidden_size
+        self.directions = 2 if bidirectional else 1
         self.embed = torch.nn.Embedding(vocab_size, embed_size)
         
         # RNN Multilayer. Receives (Seq x Batch x Features), Outputs (Seq x Batch x Hidden Size)
@@ -48,11 +43,11 @@ class ProgGen_RNN(nn.Module):
             raise NotImplementedError
 
         # Receives (Seq*Batch x Hidden Size), outputs (Seq*Batch x input_size)
-        self.fc1 = nn.Linear(hidden_size, vocab_size)
+        self.fc1 = nn.Linear(self.directions*hidden_size, vocab_size)
         
     def forward(self, idxs):
         x = self.embed(idxs)
         x, _ = self.rnn(x)
-        x = x.view(-1, self.hidden_size)
+        x = x.view(-1, self.directions*self.hidden_size)
         x = self.fc1(x)
         return x
