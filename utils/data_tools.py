@@ -77,8 +77,8 @@ def musicxml2tensor(xml_directory, words_text2num, filters = {'author':None, 'st
     
     print("\t{} tunes succesfully loaded for training.".format(len(tunes_train)))
     
-    val_tensor = torch.zeros(max_len, len(tunes_train)).long()    # All tensor initialized to zero means initialized to blank
-    for i, tune in enumerate(tunes_train):
+    val_tensor = torch.zeros(max_len, len(tunes_val)).long()    # All tensor initialized to zero means initialized to blank
+    for i, tune in enumerate(tunes_val):
         indexes = torch.tensor(tune.index_form(words_text2num))
         val_tensor[0:len(indexes), i] = indexes
     
