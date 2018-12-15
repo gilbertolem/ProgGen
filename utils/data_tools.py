@@ -1,25 +1,38 @@
 from os import listdir
-from pickle import dump
 import torch
 from torch.utils.data import Dataset
 import xml.etree.ElementTree as ET
-from random import shuffle
+import numpy as np
 
 import utils.classes as classes
 
+
 class TuneData(Dataset):
     
-    def __init__(self, X):
+    def __init__(self, Data):
+        X, W = Data
         self.X = X
         self.Y = torch.cat( (X[1:], X[0].unsqueeze(0) ) )
+        self.W = W
     
     def __getitem__(self, index):
-        return self.X[:, index], self.Y[:, index]
+        X = self.X[:,index]
+        W = self.W[index]*torch.ones_like(X)
+        return X, self.Y[:, index], W
         
     def __len__(self):
         return self.X.size(1)
 
-def musicxml2tensor(xml_directory, words_text2num, filters = {'author':None, 'style':None}):
+
+def weight_idx(tune, names):
+        if tune.style in names:
+            return names.index(tune.style)
+        if tune.author in names:
+            return names.index(tune.author)
+        return -1
+
+
+def musicxml2tensor(xml_directory, words_text2num, filters = {'names':None, 'frac':None}):
     
     """ 
     Function to go through the MusicXML files in xml_directory and convert them to tensors.
@@ -27,62 +40,81 @@ def musicxml2tensor(xml_directory, words_text2num, filters = {'author':None, 'st
         xml_directory: Name of the folder with the XML files
         words_text2num: Dictionary that maps text to an index
         filters:
-            "author": Name of the author to filter
-            "style": Style to filter
+            "names": Author or style to filter
+            "frac": Corresponding desired fraction of each author/style
     Outputs:
         data: pytorch tensor with the dataset in one-hot form
     """
+
     print("\nCREATING TENSORS FROM MUSICXML FILES...")
+
+    frac = filters['frac']
+    names = filters['names']
+    if (not isinstance(frac, list) and not frac is None) or (not isinstance(names, list) and not names is None):
+        raise Exception('Filters have to be in the form of lists')
+
+    if frac is None and names is not None:
+        weights = [1.0/len(names) for _ in range(len(names))]
+    elif (names is not None) and (len(frac)!= len(names)):
+        raise Exception('Lists of filters and weights have to be the same size')
+    else:
+        weights = [1.0/i for i in frac]
+
+    if np.abs(np.sum(frac)-1.0)>=0.1:
+        w = 1.0-np.sum(frac)
+        weights.append(w)
+        names.append("ALL")
+
+    b_filter = names is not None
+
     # Read all tunes from the xml_directory and create a list of Tune classes
     tunes = []
-    tunes_train = []
-    tunes_val = []
+    tune_weights = []
     for file in listdir(xml_directory):
         tree = ET.parse(xml_directory + file)
         tune = classes.Tune(tree)
-        
-        # Determine if tune is to be included in the dataset
-        if filters['author'] is not None:
-            b_author = filters['author']==tune.author
-        else:
-            b_author = True
-        if filters['style'] is not None:
-            b_style = filters['style']==tune.style
-        else:
-            b_style = True
-        
-        # If tune to be included, append tune depending on the desired mode
-        if b_author and b_style:
-            val_idx = torch.randperm(12)[:2]
-            for shift in range(12):
-                tunes.append(classes.Tune(tree, shift))
-    
+
+        if b_filter:
+            idx = weight_idx(tune, names)
+            if idx==-1:
+                continue
+            else:
+                w = weights[idx]
+                for shift in range(12):
+                    tunes.append(classes.Tune(tree, shift))
+                    tune_weights.append(w)
+
+    # Split in Training and Validation Set
     cut = int(len(tunes)*0.8)
     tunes_train = tunes[:cut]
+    W_train = tune_weights[:cut]
     tunes_val = tunes[cut:]
+    W_val = tune_weights[cut:]
+
     # Shuffle the tunes
-    shuffle(tunes_train)
-    shuffle(tunes_val)
-    
+    idxs_train = torch.randperm(len(tunes_train))
+    tunes_train = [tunes_train[int(i.item())] for i in idxs_train]
+    W_train = [W_train[int(i.item())] for i in idxs_train]
+    idxs_val = torch.randperm(len(tunes_val))
+    tunes_val = [tunes_val[int(i.item())] for i in idxs_val]
+    W_val = [W_val[int(i.item())] for i in idxs_val]
+
     # Each tune has different length. Final tensor will have the max length of the whole data set
     max_train = max([len(tune) for tune in tunes_train])
     max_val = max([len(tune) for tune in tunes_val])
     max_len = max(max_train, max_val)
 
     # Create and fill tensor (Sequence x Batch)
-    tunes_tensor = torch.zeros(max_len, len(tunes_train)).long()    # All tensor initialized to zero means initialized to blank
+    X_train = torch.zeros(max_len, len(tunes_train)).long()    # All tensor initialized to zero means initialized to blank
     for i, tune in enumerate(tunes_train):
-        indexes = torch.tensor(tune.index_form(words_text2num))
-        tunes_tensor[0:len(indexes), i] = indexes
+        indexes = torch.Tensor(tune.index_form(words_text2num))
+        X_train[0:len(indexes), i] = indexes
+    print("\t{} tunes successfully loaded for training.".format(len(tunes_train)))
     
-    print("\t{} tunes succesfully loaded for training.".format(len(tunes_train)))
-    
-    val_tensor = torch.zeros(max_len, len(tunes_val)).long()    # All tensor initialized to zero means initialized to blank
+    X_val = torch.zeros(max_len, len(tunes_val)).long()    # All tensor initialized to zero means initialized to blank
     for i, tune in enumerate(tunes_val):
-        indexes = torch.tensor(tune.index_form(words_text2num))
-        val_tensor[0:len(indexes), i] = indexes
+        indexes = torch.Tensor(tune.index_form(words_text2num))
+        X_val[0:len(indexes), i] = indexes
+    print("\t{} tunes successfully loaded for validation.".format(len(tunes_val)))
     
-    print("\t{} tunes succesfully loaded for validation.".format(len(tunes_val)))
-    
-    return tunes_tensor, val_tensor
-    
+    return (X_train, W_train), (X_val, W_val)

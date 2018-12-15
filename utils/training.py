@@ -1,48 +1,50 @@
 from torch.autograd import Variable
 import torch
 
-def evaluate(model, optim, val_loader, loss_fn, use_gpu):
+
+def evaluate(model, val_loader, loss_fn, use_gpu):
     
     model.eval()
     avg_loss = 0.0
-    N = len(val_loader)
-    
+
     with torch.no_grad():
         
         for n, batch in enumerate(val_loader):
-            X, Y = batch
-            Y_target = Y.view(-1)
+            x, y, w = batch
+            y = y.view(-1)
+            w = w.view(-1)
             if use_gpu:
-                X, Y_target = Variable(X.cuda()), Variable(Y_target.cuda())
+                x, y, w = Variable(x.cuda()), Variable(y.cuda()), Variable(w.cuda())
         
             # Forward pass
-            logits = model(X)
-            loss = loss_fn(logits, Y_target)
+            logits = model(x)
+            loss = loss_fn(logits, y, w)
             avg_loss += loss.item()
         
-            del X, Y, Y_target, loss
+            del x, y, w, loss
             torch.cuda.empty_cache()
         
-    avg_loss /= N
+    avg_loss /= len(val_loader)
     return avg_loss
+
 
 def train_iteration(model, optim, train_loader, loss_fn, use_gpu):
     
     avg_loss = 0.0
-    N = len(train_loader)
-    
+
     for n, batch in enumerate(train_loader):
-        X, Y = batch
-        Y_target = Y.view(-1)
+        x, y, w = batch
+        y = y.view(-1)
+        w = w.view(-1)
         if use_gpu:
-            X, Y_target = Variable(X.cuda()), Variable(Y_target.cuda())
+            x, y, w = Variable(x.cuda()), Variable(y.cuda()), Variable(w.cuda())
     
         # Forward pass
-        logits = model(X)
-        loss = loss_fn(logits, Y_target)
+        logits = model(x)
+        loss = loss_fn(logits, y, w)
         avg_loss += loss.item()
     
-        del X, Y, Y_target
+        del x, y, w
     
         # Backward pass and optimize
         optim.zero_grad()
@@ -52,7 +54,7 @@ def train_iteration(model, optim, train_loader, loss_fn, use_gpu):
         del loss
         torch.cuda.empty_cache()
         
-    avg_loss /= N
+    avg_loss /= len(train_loader)
     return avg_loss
         
 
@@ -69,7 +71,7 @@ def train(epochs, model, optim, train_loader, val_loader, loss_fn, use_gpu, mode
     for epoch in range(epochs+1):
         
         train_loss = train_iteration(model, optim, train_loader, loss_fn, use_gpu)
-        val_loss = evaluate(model, optim, val_loader, loss_fn, use_gpu)
+        val_loss = evaluate(model, val_loader, loss_fn, use_gpu)
         
         # Print to terminal
         print("{:>8} | {:13} | {:9}".format(epoch, round(train_loss,2), round(val_loss,2) ) )

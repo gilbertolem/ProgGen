@@ -12,14 +12,12 @@ import torch.nn.functional as F
 
 class Weighted_Loss(nn.Module):
     
-    def __init__(self, weights):
+    def __init__(self):
         super(Weighted_Loss,self).__init__()
-        self.weights = weights
         
-    def forward(self, input, target, classes):
-        weights = torch.Tensor([weights[i] for i in classes])
+    def forward(self, input, target, weights):
         element_loss = F.cross_entropy(input, target, reduction='none')
-        return (weights*element_loss).mean()
+        return (weights.float()*element_loss).mean()
 
 #####################################################################################################################
 # RNN generator, with embedding
