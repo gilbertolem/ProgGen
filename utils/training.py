@@ -31,7 +31,7 @@ def evaluate(model, val_loader, loss_fn, use_gpu):
 def train_iteration(model, optim, train_loader, loss_fn, use_gpu):
     
     avg_loss = 0.0
-
+    model.train()
     for n, batch in enumerate(train_loader):
         x, y, w = batch
         y = y.view(-1)
@@ -60,7 +60,6 @@ def train_iteration(model, optim, train_loader, loss_fn, use_gpu):
 
 def train(epochs, model, optim, train_loader, val_loader, loss_fn, use_gpu, model_name = 'model'):
     
-    model.train()
     train_losses = []
     val_losses = []
     print("\n--------------------------------------------------------------------")
@@ -82,5 +81,7 @@ def train(epochs, model, optim, train_loader, val_loader, loss_fn, use_gpu, mode
         if val_loss < best_loss:
             best_loss = val_loss
             torch.save(model.cpu(), 'models/'+model_name+'.pt')
+            if use_gpu:
+                model.cuda()
 
     return train_losses, val_losses

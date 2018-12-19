@@ -1,7 +1,3 @@
-#####################################################################################################################
-# Imports
-#####################################################################################################################
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,23 +6,25 @@ import torch.nn.functional as F
 # Weighted CrossEntropy Loss, for combining authors and styles
 #####################################################################################################################
 
-class Weighted_Loss(nn.Module):
+
+class WeightedLoss(nn.Module):
     
     def __init__(self):
-        super(Weighted_Loss,self).__init__()
+        super(WeightedLoss, self).__init__()
         
-    def forward(self, input, target, weights):
-        element_loss = F.cross_entropy(input, target, reduction='none')
+    def forward(self, x, target, weights):
+        element_loss = F.cross_entropy(x, target, reduction='none')
         return (weights.float()*element_loss).mean()
 
 #####################################################################################################################
 # RNN generator, with embedding
 #####################################################################################################################
 
-class ProgGen_RNN(nn.Module):
+
+class ProgGenRNN(nn.Module):
     
     def __init__(self, rnn_type, vocab_size, embed_size, hidden_size, num_layers, dropout = 0.5, bidirectional = False):
-        super(ProgGen_RNN, self).__init__()
+        super(ProgGenRNN, self).__init__()
         
         self.hidden_size = hidden_size
         self.directions = 2 if bidirectional else 1

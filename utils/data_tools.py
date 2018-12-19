@@ -29,10 +29,12 @@ def weight_idx(tune, names):
             return names.index(tune.style)
         if tune.author in names:
             return names.index(tune.author)
+        if "ALL" in names:
+            return names.index("ALL")
         return -1
 
 
-def musicxml2tensor(xml_directory, words_text2num, filters = {'names':None, 'frac':None}):
+def musicxml2tensor(xml_directory, words_text2num, filters):
     
     """ 
     Function to go through the MusicXML files in xml_directory and convert them to tensors.
@@ -50,22 +52,24 @@ def musicxml2tensor(xml_directory, words_text2num, filters = {'names':None, 'fra
 
     frac = filters['frac']
     names = filters['names']
-    if (not isinstance(frac, list) and not frac is None) or (not isinstance(names, list) and not names is None):
+    if (not isinstance(frac, list) and frac is not None) or (not isinstance(names, list) and names is not None):
         raise Exception('Filters have to be in the form of lists')
 
-    if frac is None and names is not None:
+    if names is None:
+        b_filter = False
+    elif frac is None and names is not None:
         weights = [1.0/len(names) for _ in range(len(names))]
-    elif (names is not None) and (len(frac)!= len(names)):
+        b_filter = True
+    elif (names is not None) and (len(frac) != len(names)):
         raise Exception('Lists of filters and weights have to be the same size')
     else:
+        b_filter = True
         weights = [1.0/i for i in frac]
 
-    if np.abs(np.sum(frac)-1.0)>=0.1:
+    if b_filter and (1.0 - np.sum(frac)) >= 0.05:
         w = 1.0-np.sum(frac)
         weights.append(w)
         names.append("ALL")
-
-    b_filter = names is not None
 
     # Read all tunes from the xml_directory and create a list of Tune classes
     tunes = []
@@ -76,13 +80,17 @@ def musicxml2tensor(xml_directory, words_text2num, filters = {'names':None, 'fra
 
         if b_filter:
             idx = weight_idx(tune, names)
-            if idx==-1:
+            if idx == -1:
                 continue
             else:
                 w = weights[idx]
                 for shift in range(12):
                     tunes.append(classes.Tune(tree, shift))
                     tune_weights.append(w)
+        else:
+            for shift in range(12):
+                tunes.append(classes.Tune(tree, shift))
+                tune_weights.append(1.0)
 
     # Split in Training and Validation Set
     cut = int(len(tunes)*0.8)

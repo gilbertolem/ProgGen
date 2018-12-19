@@ -1,6 +1,6 @@
 import torch
 import utils.data_tools as data_tools
-from utils.nets import ProgGen_RNN, Weighted_Loss
+from utils.nets import ProgGenRNN, WeightedLoss
 from pickle import load, dump
 import matplotlib.pyplot as plt
 
@@ -13,9 +13,11 @@ words_text2num = load(open("maps/words_text2num.txt",'rb'))
 vocab_size = len(words_text2num)
 
 # Create training data
-filter_names = ['Charlie Parker']
-filter_fracs = [1.0]
-filters = {'names':filter_names, 'frac':filter_fracs}
+# filter_names = ['Charlie Parker', 'Thelonious Monk']
+# filter_fracs = [0.5, 0.5]
+filter_names = None
+filter_fracs = None
+filters = {'names': filter_names, 'frac': filter_fracs}
 Train, Val = data_tools.musicxml2tensor(xml_directory, words_text2num, filters = filters)
 train_data = data_tools.TuneData(Train)
 val_data = data_tools.TuneData(Val)
@@ -25,10 +27,10 @@ embed_size = 100
 hidden_size = 256
 num_layers = 1
 dropout = 0
-bidirectional = False
+bidirectional = True
 rnn_type = 'lstm'
-model = ProgGen_RNN(rnn_type, vocab_size, embed_size, hidden_size, num_layers, dropout, bidirectional)
-loss_fn = Weighted_Loss()
+model = ProgGenRNN(rnn_type, vocab_size, embed_size, hidden_size, num_layers, dropout, bidirectional)
+loss_fn = WeightedLoss()
 
 # Define loader
 sampler = torch.utils.data.RandomSampler(train_data)
@@ -65,6 +67,6 @@ initial_chord = "4C_maj"
 tune_len = 32
 top = 10
 
-prog = generate_progression(initial_chord, tune_len, top, model_name, verbose = False)
+prog = generate_progression(initial_chord, tune_len, top, model_name, verbose=False)
 print("Generated Progression:\n")
 print(prog)
