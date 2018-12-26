@@ -52,45 +52,50 @@ def musicxml2tensor(xml_directory, words_text2num, filters):
 
     frac = filters['frac']
     names = filters['names']
+
+    # Validate that both frac and names are either None or lists
     if (not isinstance(frac, list) and frac is not None) or (not isinstance(names, list) and names is not None):
         raise Exception('Filters have to be in the form of lists')
 
-    if names is None:
-        b_filter = False
-    elif frac is None and names is not None:
-        weights = [1.0/len(names) for _ in range(len(names))]
-        b_filter = True
-    elif (names is not None) and (len(frac) != len(names)):
+    # If necessary, create names and frac list
+    if names is None:  # Apply trivial filter
+        frac = [1.0]
+        names = ["ALL"]
+    elif frac is None:  # Names were specified but frac didn't. Apply same frac to all
+        frac = [1.0/len(names) for _ in len(names)]
+    elif len(frac) != len(names):  # Validate that frac and names are the same length
         raise Exception('Lists of filters and weights have to be the same size')
-    else:
-        b_filter = True
-        weights = [1.0/i for i in frac]
 
-    if b_filter and (1.0 - np.sum(frac)) >= 0.05:
-        w = 1.0-np.sum(frac)
-        weights.append(w)
+    # If the sum of the specified fractions is less than one, apply trivial filter to the remaining fraction
+    if (1.0 - np.sum(frac)) >= 0.05:
         names.append("ALL")
+        frac.append(1.0-np.sum(frac))
+
+    # Define list for instances of each class
+    class_count = [0 for _ in range(len(names))]
 
     # Read all tunes from the xml_directory and create a list of Tune classes
     tunes = []
-    tune_weights = []
+    tune_classes = []
     for file in listdir(xml_directory):
         tree = ET.parse(xml_directory + file)
         tune = classes.Tune(tree)
 
-        if b_filter:
-            idx = weight_idx(tune, names)
-            if idx == -1:
-                continue
-            else:
-                w = weights[idx]
-                for shift in range(12):
-                    tunes.append(classes.Tune(tree, shift))
-                    tune_weights.append(w)
+        # Get index within the name list
+        idx = weight_idx(tune, names)
+        if idx == -1:   # Tune not to be considered
+            continue
         else:
+            class_count[idx] += 12
             for shift in range(12):
                 tunes.append(classes.Tune(tree, shift))
-                tune_weights.append(1.0)
+                tune_classes.append(idx)
+
+    # Normalize count to compute class frequency
+    class_count = np.array(class_count) / np.sum(class_count)
+
+    # Get the weights for the loss function
+    tune_weights = [frac[i]/class_count[i] for i in tune_classes]
 
     # Split in Training and Validation Set
     cut = int(len(tunes)*0.8)

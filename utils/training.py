@@ -1,5 +1,15 @@
 from torch.autograd import Variable
 import torch
+from scipy.stats import linregress
+
+
+def stopping_criterion(val_losses, n_stop):
+    epoch = len(val_losses)
+    if epoch >= n_stop:
+        min_idx = epoch - n_stop
+        m = linregress(range(n_stop), val_losses[min_idx:])[0]
+        return m > 0
+    return False
 
 
 def evaluate(model, val_loader, loss_fn, use_gpu):
@@ -30,7 +40,6 @@ def evaluate(model, val_loader, loss_fn, use_gpu):
 
 def train_iteration(model, optim, train_loader, loss_fn, use_gpu):
     
-    avg_loss = 0.0
     model.train()
     for n, batch in enumerate(train_loader):
         x, y, w = batch
@@ -42,8 +51,7 @@ def train_iteration(model, optim, train_loader, loss_fn, use_gpu):
         # Forward pass
         logits = model(x)
         loss = loss_fn(logits, y, w)
-        avg_loss += loss.item()
-    
+
         del x, y, w
     
         # Backward pass and optimize
@@ -53,35 +61,38 @@ def train_iteration(model, optim, train_loader, loss_fn, use_gpu):
         optim.step()
         del loss
         torch.cuda.empty_cache()
-        
-    avg_loss /= len(train_loader)
-    return avg_loss
-        
 
-def train(epochs, model, optim, train_loader, val_loader, loss_fn, use_gpu, model_name = 'model'):
+
+def print_losses(epoch, train, val):
+    print("{:>8} | {:13} | {:9}".format(epoch, round(train, 2), round(val, 2)))
+
+
+def train(epochs, model, optim, train_loader, val_loader, loss_fn, use_gpu, model_name='model', n_stop=20):
     
-    train_losses = []
-    val_losses = []
     print("\n--------------------------------------------------------------------")
     print("TRAINING MODEL...", "\n\n   Epoch | Training Loss | Val. Loss")
     
     best_loss = float('Inf')
-    
-    for epoch in range(epochs+1):
+
+    # Initial evaluation
+    train_losses = [evaluate(model, train_loader, loss_fn, use_gpu)]
+    val_losses = [evaluate(model, val_loader, loss_fn, use_gpu)]
+    print_losses(0, train_losses[-1], val_losses[-1])
+
+    for epoch in range(1, epochs+1):
         
-        train_loss = train_iteration(model, optim, train_loader, loss_fn, use_gpu)
-        val_loss = evaluate(model, val_loader, loss_fn, use_gpu)
-        
-        # Print to terminal
-        print("{:>8} | {:13} | {:9}".format(epoch, round(train_loss,2), round(val_loss,2) ) )
-        
-        train_losses.append( train_loss )
-        val_losses.append( val_loss )
-        
-        if val_loss < best_loss:
-            best_loss = val_loss
+        train_iteration(model, optim, train_loader, loss_fn, use_gpu)
+        train_losses.append(evaluate(model, train_loader, loss_fn, use_gpu))
+        val_losses.append(evaluate(model, val_loader, loss_fn, use_gpu))
+        print_losses(epoch, train_losses[-1], val_losses[-1])
+
+        if val_losses[-1] < best_loss:
+            best_loss = val_losses[-1]
             torch.save(model.cpu(), 'models/'+model_name+'.pt')
             if use_gpu:
                 model.cuda()
+
+        if stopping_criterion(val_losses, n_stop):
+            break
 
     return train_losses, val_losses
