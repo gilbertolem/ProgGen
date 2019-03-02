@@ -20,7 +20,6 @@ class WeightedLoss(nn.Module):
 # RNN generator, with embedding
 #####################################################################################################################
 
-
 class ProgGenRNN(nn.Module):
     
     def __init__(self, vocab_size, embed_size, rnn_type, bidirectional, hidden_rnn, num_layers, dropout_rnn, hidden_fc, dropout_fc):
