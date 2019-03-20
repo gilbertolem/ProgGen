@@ -1,7 +1,10 @@
+import tensorflow as tf
+
 from pickle import load, dump
-import torch
 from numpy import argsort
+from numpy.random import multinomial
 from sys import argv
+from utils.nets import build_model
 
 def get_pad(chord, reduce = True):
     dur = int(chord[0])
@@ -95,49 +98,50 @@ class Progression():
             s += chord[1:] + get_pad(chord, reduce)
         return s[:-1]
         
-def generate_progression(initial_chord = "4C_maj", tune_len = 32, top = 1, model_name = 'model', use_gpu = False, verbose = False):
+def generate_progression(initial_chord = "4C_maj", tune_len = 32, top = 1, use_gpu = False, verbose = False):
     
     # Load model and vocabulary
-    model = torch.load('models/'+model_name+'.pt')
     words_num2text = load(open("maps/words_num2text.txt",'rb'))
     words_text2num = load(open("maps/words_text2num.txt",'rb'))
     vocab_size = len(words_text2num)
-    model.eval()
-    with torch.no_grad():
-        
-        # Transform initial_chord to tensor (1 x 1)
-        idx = words_text2num[initial_chord]
-        x = torch.LongTensor([idx]).view(1,1)
-        predictions = [idx]
-        for n in range(tune_len):
-            x_c = x.cuda() if use_gpu else x
-            logits = model(x_c)       # input: [1+n x 1];  output: [(1+n)*1 x vocab_size]
-            p = torch.nn.functional.softmax(logits, dim=1)[-1]      # output: [vocab_size]
-            p[argsort(p)[:-top]] = 0
-            p /= torch.sum(p)
-            
-            idx = torch.multinomial(p,1).item()
-            predictions.append(idx)
-            
-            new_x = torch.LongTensor([idx]).view(1,1)
-            
-            x = torch.cat( (x, new_x), 0)
+    
+    embed_size = 256 
+    rnn_type = 'lstm'
+    bidirectional = True
+    num_layers = 1
+    hidden_rnn = 100
+    dropout_rnn = 0.0
+
+    # FC layers parameters
+    hidden_fc = 0
+    dropout_fc = 0.0
+
+    batch_size = 1
+    
+    # Create model and loss function    
+    model = build_model(vocab_size, embed_size, rnn_type, bidirectional, hidden_rnn, num_layers, dropout_rnn, hidden_fc, dropout_fc, batch_size)
+    
+    model.load_weights(tf.train.latest_checkpoint('./training_checkpoints'))
+    model.build(tf.TensorShape([1,None]))
+    
+    # Transform initial_chord to tensor (1 x 1)
+    input_id = words_text2num[initial_chord]
+    predictions = [input_id]
+    
+    input_eval = tf.expand_dims([input_id], 0)
+    
+    temperature = 1.0
+    
+    model.reset_states()
+    for i in range(tune_len):
+        preds = tf.squeeze(model(input_eval), 0) / temperature # Returns (sequential, vocab_size)
+        preds = preds[-1].numpy()
+        preds[argsort(preds)[:-top]] = preds.min()
+        pred_id = tf.random.categorical(preds.reshape(1,-1), 1)[0,0].numpy()
+        predictions.append(pred_id)
+        input_eval = tf.expand_dims([pred_id],0)
         
     structure = [words_num2text[idx] for idx in predictions]
     if verbose:
         print(structure)
     return Progression(structure)
-
-if __name__=="__main__":
-
-    # Define parameters for generation
-    if len(argv) < 4:
-        initial_chord = "4C_maj"
-        tune_len = 32
-        top = 1                 # Choose between the top 'top' probabilities in every iteration
-    else:
-        initial_chord = argv[1]
-        tune_len = int(argv[2])
-        top = int(argv[3])
-    
-    generate_progression(initial_chord, tune_len, top)
