@@ -62,9 +62,12 @@ def load_tunes(xml_directory, filters):
             continue
         else:
             class_count[idx] += 12
-            for shift in range(12):
-                tunes.append(classes.Tune(tree, shift))
-                tune_classes.append(idx)
+            # for shift in range(12):
+            #     tunes.append(classes.Tune(tree, shift))
+            #     tune_classes.append(idx)
+
+            tunes.append(classes.Tune(tree, 0))
+            tune_classes.append(idx)
 
     # Normalize count to compute class frequency
     class_count = np.array(class_count) / np.sum(class_count)

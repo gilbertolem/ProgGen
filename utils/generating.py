@@ -105,9 +105,9 @@ def generate_progression(initial_chord = "4C_maj", tune_len = 32, top = 1, use_g
     words_text2num = load(open("maps/words_text2num.txt",'rb'))
     vocab_size = len(words_text2num)
     
-    embed_size = 256 
+    embed_size = 100
     rnn_type = 'lstm'
-    bidirectional = True
+    bidirectional = False
     num_layers = 1
     hidden_rnn = 100
     dropout_rnn = 0.0
@@ -128,18 +128,19 @@ def generate_progression(initial_chord = "4C_maj", tune_len = 32, top = 1, use_g
     input_id = words_text2num[initial_chord]
     predictions = [input_id]
     
-    input_eval = tf.expand_dims([input_id], 0)
-    
-    temperature = 1.0
-    
-    model.reset_states()
     for i in range(tune_len):
-        preds = tf.squeeze(model(input_eval), 0) / temperature # Returns (sequential, vocab_size)
-        preds = preds[-1].numpy()
-        preds[argsort(preds)[:-top]] = preds.min()
-        pred_id = tf.random.categorical(preds.reshape(1,-1), 1)[0,0].numpy()
+        model.reset_states()    
+        input_eval = tf.expand_dims(predictions, 0)
+        
+        preds = tf.squeeze(model(input_eval), 0) # Returns (sequential, vocab_size)
+        
+        probs_top, idx_top = tf.math.top_k(preds[-1])
+        
+        logits_top = tf.expand_dims(tf.math.log(probs_top), 0)
+        pred_id = idx_top[tf.random.categorical(logits_top, 1)[0,0].numpy()].numpy()
+        
         predictions.append(pred_id)
-        input_eval = tf.expand_dims([pred_id],0)
+        
         
     structure = [words_num2text[idx] for idx in predictions]
     if verbose:

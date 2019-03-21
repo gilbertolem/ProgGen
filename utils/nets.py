@@ -17,7 +17,7 @@ def build_model(vocab_size, embed_size, rnn_type, bidirectional, hidden_rnn, num
     model = tf.keras.Sequential([
     tf.keras.layers.Embedding(vocab_size, embed_size),
     rnn_wrapper,
-    tf.keras.layers.Dense(vocab_size)
+    tf.keras.layers.Dense(vocab_size, activation='softmax')
     ])
     return model
     
