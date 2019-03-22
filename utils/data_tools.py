@@ -20,11 +20,8 @@ def load_data(xml_directory, filters, batch_size):
     X = tunes2tensor(tunes)
     print("\t{} tunes successfully loaded for training.".format(len(tunes)))
     
-    def split_input_target(rola):
-        return rola[:-1], rola[1:]
-    
-    dataset = tf.data.Dataset.from_tensor_slices(X).map(split_input_target)
-    dataset = dataset.shuffle(100).batch(batch_size, drop_remainder=True)
+    dataset = tf.data.Dataset.from_tensor_slices(( X[:,:-1], X[:,1:], W ))
+    dataset = dataset.shuffle(100).batch(batch_size)
     
     return dataset
     

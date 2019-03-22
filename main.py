@@ -12,8 +12,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Disable AVX/FMA warnings
 ######### PARAMETERS ###############
 
 # Dataset parameters
-batch_size = 128
-filter_names = ['Charlie Parker']
+batch_size = 1
+filter_names = ['John Klenner']
 filter_fracs = [1.0]
 
 # Model parameters
@@ -27,7 +27,7 @@ dropout_fc = 0.0
 
 # Training parameters
 lr = 1e-2
-epochs = 100
+epochs = 30
 
 ######## CREATE AND TRAIN MODEL ########
 
