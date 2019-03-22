@@ -12,8 +12,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Disable AVX/FMA warnings
 ######### PARAMETERS ###############
 
 # Dataset parameters
-batch_size = 1
-filter_names = ['John Klenner']
+batch_size = 128
+filter_names = ['Charlie Parker']
 filter_fracs = [1.0]
 
 # Model parameters
@@ -27,7 +27,7 @@ dropout_fc = 0.0
 
 # Training parameters
 lr = 1e-2
-epochs = 30
+epochs = 300
 
 ######## CREATE AND TRAIN MODEL ########
 
@@ -37,7 +37,7 @@ filters = {'names':filter_names, 'frac':filter_fracs}
 dataset =  load_data(xml_directory, filters, batch_size) # X: (batch, sequence), W: (batch,)
 
 # Create model
-model, build_dict = build_model(embed_size, rnn_type, hidden_rnn, num_layers, dropout_rnn, hidden_fc, dropout_fc, batch_size, return_dict=True, verbose=True)
+model, build_dict = build_model(embed_size, rnn_type, hidden_rnn, num_layers, hidden_fc, dropout_fc, batch_size, return_dict=True, verbose=True)
 
 # Train
 optimizer = tf.keras.optimizers.Adam(lr=lr)

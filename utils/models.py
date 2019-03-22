@@ -1,6 +1,6 @@
 from pickle import load
 import tensorflow as tf
-import os
+import os, shutil
 from tensorflow.python.keras import backend as K
 from tensorflow.python.ops import nn
 from tensorflow.python.ops import math_ops
@@ -31,9 +31,12 @@ def top_5_acc(y_true0, y_pred0):
 
 ### MODEL ARCHITECTURE #######
 
-def build_model(embed_size, rnn_type, hidden_rnn, num_layers, dropout_rnn, hidden_fc, dropout_fc, batch_size, return_dict=False, verbose=False):
+def build_model(embed_size, rnn_type, hidden_rnn, num_layers, hidden_fc, dropout_fc, batch_size, return_dict=False, verbose=False):
     
-    rnn_param_dict = {'units':hidden_rnn, 'return_sequences':True, 'batch_input_shape':[batch_size, None], 'recurrent_activation':'sigmoid','recurrent_dropout':dropout_rnn}
+    rnn_param_dict = {'units':hidden_rnn, 'return_sequences':True, 
+                      'activation':'tanh', 'batch_input_shape':[batch_size, None], 
+                      'recurrent_activation':'sigmoid', 'recurrent_dropout':0,
+                     'unroll':False, 'use_bias':True}
     if rnn_type=='gru':
         rnn = GRU
     elif rnn_type=='lstm':
@@ -57,7 +60,7 @@ def build_model(embed_size, rnn_type, hidden_rnn, num_layers, dropout_rnn, hidde
     
     # Save parameters used for constructing the net
     if return_dict:
-        build_dict = {'embed_size':embed_size, 'rnn_type':rnn_type, 'hidden_rnn':hidden_rnn, 'num_layers':num_layers, 'dropout_rnn':dropout_rnn, 'hidden_fc':hidden_fc, 'dropout_fc':dropout_fc, 'batch_size':batch_size}
+        build_dict = {'embed_size':embed_size, 'rnn_type':rnn_type, 'hidden_rnn':hidden_rnn, 'num_layers':num_layers, 'hidden_fc':hidden_fc, 'dropout_fc':dropout_fc, 'batch_size':batch_size}
         
         return model, build_dict
     else:
@@ -72,9 +75,10 @@ def train(model, dataset, optimizer, epochs):
                     metrics=[top_1_acc, top_3_acc, top_5_acc])
 
     # Checkpoint info
-    checkpoint_dir = './training_checkpoints'
-    checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt_{epoch}")
-    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_prefix, save_weights_only=True)
+    shutil.rmtree('./training_checkpoints')
+    os.mkdir('./training_checkpoints')
+    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath="./training_checkpoints/ckpt_{epoch}", 
+                                save_weights_only=True, period=max(1, epochs//10))
     
     history = model.fit(dataset, epochs=epochs, callbacks=[checkpoint_callback])
     
