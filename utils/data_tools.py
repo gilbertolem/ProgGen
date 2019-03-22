@@ -2,7 +2,7 @@ from os import listdir
 import tensorflow as tf
 import xml.etree.ElementTree as ET
 import numpy as np
-
+from pickle import load
 import utils.classes as classes
 
 def weight_idx(tune, names):
@@ -14,7 +14,40 @@ def weight_idx(tune, names):
             return names.index("ALL")
         return -1
 
-def load_tunes(xml_directory, filters):
+def load_data(xml_directory, filters, batch_size):
+    
+    tunes, W = musicxml2tunes(xml_directory, filters)
+    X = tunes2tensor(tunes)
+    print("\t{} tunes successfully loaded for training.".format(len(tunes)))
+    
+    def split_input_target(rola):
+        return rola[:-1], rola[1:]
+    
+    dataset = tf.data.Dataset.from_tensor_slices(X).map(split_input_target)
+    dataset = dataset.shuffle(100).batch(batch_size, drop_remainder=True)
+    
+    return dataset
+    
+def tunes2tensor(tunes):
+    
+    words_text2num = load(open("maps/words_text2num.txt",'rb'))
+    
+    print("\nCREATING TENSORS FROM MUSICXML FILES...")
+    
+    # Each tune has different length. Final tensor will have the max length of the whole data set
+    max_len = max([len(tune) for tune in tunes])
+    
+    # Create and fill tensor (Batch x Sequence)
+    all_tunes_int = []
+    for tune in tunes:
+        indexes = tune.index_form(words_text2num)
+        # Pad with zeros
+        while len(indexes) < max_len:
+            indexes.append(0)
+        all_tunes_int.append(indexes)
+    return tf.convert_to_tensor(all_tunes_int, dtype=tf.int32)
+
+def musicxml2tunes(xml_directory, filters):
     """ 
     Function to go through the MusicXML files in xml_directory and convert them to Tune classes.
     Inputs:
@@ -25,6 +58,7 @@ def load_tunes(xml_directory, filters):
     Outputs:
         data: tensor with the dataset in one-hot form
     """
+    print("\nLOADING MUSICXML FILES...")
     frac = filters['frac']
     names = filters['names']
 
@@ -62,12 +96,9 @@ def load_tunes(xml_directory, filters):
             continue
         else:
             class_count[idx] += 12
-            # for shift in range(12):
-            #     tunes.append(classes.Tune(tree, shift))
-            #     tune_classes.append(idx)
-
-            tunes.append(classes.Tune(tree, 0))
-            tune_classes.append(idx)
+            for shift in range(12):
+                tunes.append(classes.Tune(tree, shift))
+                tune_classes.append(idx)
 
     # Normalize count to compute class frequency
     class_count = np.array(class_count) / np.sum(class_count)
@@ -77,26 +108,3 @@ def load_tunes(xml_directory, filters):
     
     return tunes, tune_weights
     
-
-def musicxml2tensor(xml_directory, words_text2num, filters):
-    
-    tunes, W = load_tunes(xml_directory, filters)
-    
-    print("\nCREATING TENSORS FROM MUSICXML FILES...")
-    
-    # Each tune has different length. Final tensor will have the max length of the whole data set
-    max_len = max([len(tune) for tune in tunes])
-
-    # Create and fill tensor (Batch x Sequence)
-    all_tunes_int = []
-    for tune in tunes:
-        indexes = tune.index_form(words_text2num)
-        # Pad with zeros
-        while len(indexes) < max_len:
-            indexes.append(0)
-        all_tunes_int.append(indexes)
-    X = tf.convert_to_tensor(all_tunes_int, dtype=tf.int32)
-        
-    print("\t{} tunes successfully loaded for training.".format(len(tunes)))
-    
-    return X, W

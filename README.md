@@ -1,6 +1,6 @@
 # ProgGen
 
-Jazz progression generator using Recurrent Neural Networks in pytorch.
+Jazz progression generator using Recurrent Neural Networks.
 
 This code takes ~1500 progression charts in MusicXML format (most of them jazz tunes) and generates new progressions taking them as a reference. The tunes and the progressions can be found in the *iReal Pro* app.
 

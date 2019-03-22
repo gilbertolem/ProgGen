@@ -154,3 +154,94 @@ class Tune():
 
         return s
         
+def get_pad(chord, reduce = True):
+    dur = int(chord[0])
+    if dur>=1 and reduce:
+        dur = int(dur/2)
+    L = len(chord)-1
+
+    pad = ''
+    N = dur*7 + dur + 1
+    for _ in range(N-L):
+        pad += ' '
+    return pad
+
+class Progression():
+
+    def __init__(self, structure):
+        self.structure = structure
+        
+    def __str__(self):
+        
+        structure = self.structure
+        
+        # Group structure in compases (4 beats) and structures (casillas, repeticiones, bars)
+        grouped_structure = []
+        compas = []
+        dur = 0
+        for thing in structure:        
+            
+            if not self.is_chord(thing):
+                grouped_structure.append(thing)
+            else:
+                dur += int(thing[0])
+                if dur>4 and int(thing[0])==4:
+                    grouped_structure.append(compas)
+                    grouped_structure.append('|')
+                    grouped_structure.append([thing])
+                    grouped_structure.append('|')
+                    compas = []
+                    dur = 0
+                elif dur>4 and int(thing[0])==2:
+                    grouped_structure.append(compas)
+                    grouped_structure.append('|')
+                    compas = [thing]
+                    dur = int(thing[0])
+                elif dur==4:
+                    compas.append(thing)
+                    grouped_structure.append(compas)
+                    grouped_structure.append('|')
+                    dur = 0
+                    compas = []
+                else:
+                    compas.append(thing)
+        
+        # Make string from grouped structure
+        s = "\n\nGenerated Progression:\n"
+        compases = 0
+        new_line = False
+        for thing in grouped_structure:
+            if not isinstance(thing, list):
+                s += thing
+            else:
+                s += self.compas_to_text(thing)
+                compases += 1
+                
+            if thing==":|":
+                s += '\n'
+                compases = 0
+        
+        # Add changes of line, and remove _
+        bars = 0
+        new_s = ''
+        for i, ch in enumerate(s):
+            if ch!='_':
+                new_s += ch
+            
+            if ch=='|':
+                bars += 1
+            if bars==4:
+                bars = 0
+                new_s += '\n'
+        return new_s
+
+    def is_chord(self, ch):
+        return len(ch)>0 and ch[0] in ['1','2','4']
+
+    def compas_to_text(self, compas, reduce = True):
+        s = ""
+        for chord in compas:
+            if int(chord[0]) == 1 and reduce==True:
+                return self.compas_to_text(compas, False)
+            s += chord[1:] + get_pad(chord, reduce)
+        return s[:-1]
