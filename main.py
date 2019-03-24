@@ -13,8 +13,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Disable AVX/FMA warnings
 
 # Dataset parameters
 batch_size = 128
-filter_names = ['Charlie Parker']
-filter_fracs = [1.0]
+filter_names = ['Bossa Nova', 'Charlie Parker']
+filter_fracs = [0.5, 0.5]
 
 # Model parameters
 embed_size = 100
@@ -46,7 +46,7 @@ model, history = train(model, dataset, optimizer, epochs)
 ###### GENERATE PROGRESSION #############
 
 initial_chord = "4C_maj"
-tune_len = 40
+tune_len = 32
 top = 10
 
 prog = generate_progression(build_dict, initial_chord, tune_len, top)

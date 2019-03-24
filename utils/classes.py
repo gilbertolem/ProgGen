@@ -170,10 +170,7 @@ class Progression():
 
     def __init__(self, structure):
         self.structure = structure
-        
-    def __str__(self):
-        
-        structure = self.structure
+        self.n_bars = 0
         
         # Group structure in compases (4 beats) and structures (casillas, repeticiones, bars)
         grouped_structure = []
@@ -186,6 +183,7 @@ class Progression():
             else:
                 dur += int(thing[0])
                 if dur>4 and int(thing[0])==4:
+                    self.n_bars+=1
                     grouped_structure.append(compas)
                     grouped_structure.append('|')
                     grouped_structure.append([thing])
@@ -193,12 +191,14 @@ class Progression():
                     compas = []
                     dur = 0
                 elif dur>4 and int(thing[0])==2:
+                    self.n_bars+=1
                     grouped_structure.append(compas)
                     grouped_structure.append('|')
                     compas = [thing]
                     dur = int(thing[0])
                 elif dur==4:
                     compas.append(thing)
+                    self.n_bars+=1
                     grouped_structure.append(compas)
                     grouped_structure.append('|')
                     dur = 0
@@ -223,17 +223,19 @@ class Progression():
         
         # Add changes of line, and remove _
         bars = 0
-        new_s = ''
+        self.string_repr = ''
         for i, ch in enumerate(s):
             if ch!='_':
-                new_s += ch
+                self.string_repr += ch
             
             if ch=='|':
                 bars += 1
             if bars==4:
                 bars = 0
-                new_s += '\n'
-        return new_s
+                self.string_repr += '\n'
+        
+    def __str__(self):
+        return self.string_repr
 
     def is_chord(self, ch):
         return len(ch)>0 and ch[0] in ['1','2','4']

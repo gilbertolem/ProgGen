@@ -21,7 +21,10 @@ def generate_progression(build_dict, initial_chord = "4C_maj", tune_len = 32, to
     input_id = words_text2num[initial_chord]
     predictions = [input_id]
     
-    for i in range(tune_len):
+    structure = [words_num2text[input_id]]
+    
+    current_length = 0
+    while current_length < tune_len:
         model.reset_states()    
         input_eval = tf.expand_dims(predictions, 0)
         
@@ -31,10 +34,12 @@ def generate_progression(build_dict, initial_chord = "4C_maj", tune_len = 32, to
         
         logits_top = tf.expand_dims(tf.math.log(probs_top), 0)
         pred_id = idx_top[tf.random.categorical(logits_top, 1)[0,0].numpy()].numpy()
+        pred_char = words_num2text[pred_id]
         
-        predictions.append(pred_id)
+        if pred_id>0:
+            structure.append(pred_char)
+            predictions.append(pred_id)
         
+        current_length = Progression(structure).n_bars
         
-    structure = [words_num2text[idx] for idx in predictions]
-
     return Progression(structure)
