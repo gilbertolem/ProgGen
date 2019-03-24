@@ -13,8 +13,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Disable AVX/FMA warnings
 
 # Dataset parameters
 batch_size = 128
-filter_names = ['Bossa Nova', 'Charlie Parker']
-filter_fracs = [0.5, 0.5]
+filter_names = ['Chick Corea']
+filter_fracs = [1.0]
 
 # Model parameters
 embed_size = 100
@@ -37,17 +37,17 @@ filters = {'names':filter_names, 'frac':filter_fracs}
 dataset =  load_data(xml_directory, filters, batch_size) # X: (batch, sequence), W: (batch,)
 
 # Create model
-model, build_dict = build_model(embed_size, rnn_type, hidden_rnn, num_layers, hidden_fc, dropout_fc, batch_size, return_dict=True, verbose=True)
+model = build_model(embed_size, rnn_type, hidden_rnn, num_layers, hidden_fc, dropout_fc, batch_size, verbose=True)
 
 # Train
-optimizer = tf.keras.optimizers.Adam(lr=lr)
-model, history = train(model, dataset, optimizer, epochs)
+# optimizer = tf.keras.optimizers.Adam(lr=lr)
+# model, history = train(model, dataset, optimizer, epochs)
 
 ###### GENERATE PROGRESSION #############
 
 initial_chord = "4C_maj"
 tune_len = 32
-top = 10
+top = 3
 
-prog = generate_progression(build_dict, initial_chord, tune_len, top)
+prog = generate_progression(initial_chord, tune_len, top)
 print(prog)

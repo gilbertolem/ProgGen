@@ -21,3 +21,55 @@ filter_fracs = [0.5, 0.4]
 ```
 
 As the sum of the specified fractions sums to 0.9, the rest is going to be taken from the remaining authors.
+
+## Principal authors and styles
+
+As a reference, this is a list of the principal authors and styles that can be chosen for the filters:
+
+### Authors
+
+This list was taken from the authors that had >=10 tunes in the iReal app.
+
+- Antonio-Carlos Jobim
+- Bill Evans
+- Billy Strayhorn
+- Charlie Parker
+- Chick Corea
+- Cole Porter
+- Dizzy Gillespie
+- Duke Ellington
+- George Gershwin
+- Harold Arlen
+- Harry Warren
+- Herbie Hancock
+- Hoagy Carmichael
+- Horace Silver
+- Irving Berlin
+- Jerome Kern
+- Jimmy McHugh
+- Jimmy Van-Heusen
+- Joe Henderson
+- John Coltrane
+- Jule Styne
+- Keith Jarrett
+- Miles Davis
+- Pat Metheny
+- Richard Rodgers
+- Thelonious Monk
+- Wayne Shorter
+- Sonny Rollins
+
+### Styles
+
+More than music style, this refers to the default backing track style set in the iReal app. This is the list of the first 10 most common styles:
+
+- Ballad
+- Bossa Nova
+- Even 8ths
+- Latin
+- Funk
+- Medium Swing
+- Medium Up Swing
+- Slow Swing
+- Up Tempo Swing
+- Waltz

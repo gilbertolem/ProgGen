@@ -3,18 +3,23 @@ from pickle import load
 from utils.models import build_model
 from utils.classes import Progression
 
-def generate_progression(build_dict, initial_chord = "4C_maj", tune_len = 32, top = 1, use_gpu = False):
+def generate_progression(initial_chord = "4C_maj", tune_len = 32, top = 1, dir = None):
     
     # Load model and vocabulary
     words_num2text = load(open("maps/words_num2text.txt",'rb'))
     words_text2num = load(open("maps/words_text2num.txt",'rb'))
     vocab_size = len(words_text2num)
     
+    if dir is None:
+        dir = './training_checkpoints'
+    
+    build_dict = load(open(dir+'/build_dict','rb'))
+    
     build_dict['batch_size'] = 1
     # Create model and loss function    
     model = build_model(**build_dict)
     
-    model.load_weights(tf.train.latest_checkpoint('./training_checkpoints'))
+    model.load_weights(tf.train.latest_checkpoint(dir))
     model.build(tf.TensorShape([1,None]))
     
     # Transform initial_chord to tensor (1 x 1)
