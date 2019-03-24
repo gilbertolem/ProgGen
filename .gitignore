@@ -1,6 +1,7 @@
 *.pyc
 __pycache__
 // XML_Tunes/
-.ipynb_checkpoints
+.ipynb_checkpoints/
 .idea
-// training_checkpoints/
+training_checkpoints/
+models/
