@@ -1,7 +1,4 @@
 *.pyc
 __pycache__
-// iReal/
 .ipynb_checkpoints/
 .idea/
-// training_checkpoints/
-models/

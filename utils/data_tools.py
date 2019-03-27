@@ -5,6 +5,7 @@ import numpy as np
 from pickle import load
 import utils.classes as classes
 
+
 def weight_idx(tune, names):
         if tune.style in names:
             return names.index(tune.style)
@@ -14,20 +15,22 @@ def weight_idx(tune, names):
             return names.index("ALL")
         return -1
 
+
 def load_data(xml_directory, filters, batch_size):
     
     tunes, W = musicxml2tunes(xml_directory, filters)
     X = tunes2tensor(tunes)
     print("\t{} tunes successfully loaded for training.".format(len(tunes)))
     
-    dataset = tf.data.Dataset.from_tensor_slices(( X[:,:-1], X[:,1:], W ))
+    dataset = tf.data.Dataset.from_tensor_slices((X[:, :-1], X[:, 1:], W))
     dataset = dataset.shuffle(100).batch(batch_size)
     
     return dataset
-    
+
+
 def tunes2tensor(tunes):
     
-    words_text2num = load(open("maps/words_text2num.txt",'rb'))
+    words_text2num = load(open("maps/words_text2num.txt", 'rb'))
     
     print("\nCREATING TENSORS FROM MUSICXML FILES...")
     
@@ -44,6 +47,7 @@ def tunes2tensor(tunes):
         all_tunes_int.append(indexes)
     return tf.convert_to_tensor(all_tunes_int, dtype=tf.int32)
 
+
 def musicxml2tunes(xml_directory, filters):
     """ 
     Function to go through the MusicXML files in xml_directory and convert them to Tune classes.
@@ -55,9 +59,14 @@ def musicxml2tunes(xml_directory, filters):
     Outputs:
         data: tensor with the dataset in one-hot form
     """
-    print("\nLOADING MUSICXML FILES...")
+
+    filters.setdefault('frac', None)
+    filters.setdefault('names', None)
+
     frac = filters['frac']
     names = filters['names']
+
+    print("\nLOADING MUSICXML FILES...\n\tFilters: {}\n\tWeights: {}".format(names, frac))
 
     # Validate that both frac and names are either None or lists
     if (not isinstance(frac, list) and frac is not None) or (not isinstance(names, list) and names is not None):
@@ -96,6 +105,7 @@ def musicxml2tunes(xml_directory, filters):
             for shift in range(12):
                 tunes.append(classes.Tune(tree, shift))
                 tune_classes.append(idx)
+            print("\t\tAdded: {}".format(tunes[-1].title))
 
     # Normalize count to compute class frequency
     class_count = np.array(class_count) / np.sum(class_count)
@@ -104,4 +114,3 @@ def musicxml2tunes(xml_directory, filters):
     tune_weights = [frac[i]/class_count[i] for i in tune_classes]
     
     return tunes, tune_weights
-    

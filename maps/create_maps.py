@@ -1,10 +1,10 @@
+import xml.etree.ElementTree as ET
+import utils.classes as classes
+from pickle import dump
 from os import listdir, getcwd
 from sys import path
 path.append(getcwd())
 
-import xml.etree.ElementTree as ET
-import utils.classes as classes
-from pickle import dump
 
 # This creates the kind dictionary for mapping from any chord in iRealPro to simple chord functions
 def create_simplekind_dictionary():

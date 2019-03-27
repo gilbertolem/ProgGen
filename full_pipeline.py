@@ -1,15 +1,13 @@
-######### IMPORTS ###########
-
-import tensorflow as tf
+import tensorflow.keras as keras
 
 from utils.generating import generate_progression
 from utils.data_tools import load_data
 from utils.models import build_model, train
 
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Disable AVX/FMA warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Disable AVX/FMA warnings
 
-######### PARAMETERS ###############
+# PARAMETERS
 
 # Dataset parameters
 batch_size = 128
@@ -26,24 +24,24 @@ hidden_fc = 0
 dropout_fc = 0.0
 
 # Training parameters
-lr = 1e-2
-epochs = 300
+lr = 1e-1
+epochs = 100
 
-######## CREATE AND TRAIN MODEL ########
+# CREATE AND TRAIN MODEL
 
 # Load data
 xml_directory = "iReal/"
-filters = {'names':filter_names, 'frac':filter_fracs}
-dataset =  load_data(xml_directory, filters, batch_size) # X: (batch, sequence), W: (batch,)
+filters = {'names': filter_names, 'frac': filter_fracs}
+dataset = load_data(xml_directory, filters, batch_size)  # X: (batch, sequence), W: (batch,)
 
 # Create model
 model = build_model(embed_size, rnn_type, hidden_rnn, num_layers, hidden_fc, dropout_fc, batch_size, verbose=True)
 
 # Train
-# optimizer = tf.keras.optimizers.Adam(lr=lr)
-# model, history = train(model, dataset, optimizer, epochs)
+optimizer = keras.optimizers.Adam(lr=lr)
+model, history = train(model, dataset, optimizer, epochs)
 
-###### GENERATE PROGRESSION #############
+# GENERATE PROGRESSION
 
 initial_chord = "4C_maj"
 tune_len = 32
