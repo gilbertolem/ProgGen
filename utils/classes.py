@@ -1,7 +1,43 @@
-from maps.definitions import *
+from maps.definitions import durations, alterations, repetitions, pitch_num2text, pitch_text2num
 from pickle import load
 
 simple_kind = load(open('maps/simple_kind.txt','rb'))
+
+class Melody():
+    
+    def __init__(self, tree, shift=0):
+        
+        self.shift = shift
+        self.title = tree.find('work').find('work-title').text
+        
+        self.structure = self.get_structure(tree)
+        
+    def get_structure(self, tree):
+        
+        structure = []
+        for measure in tree.find('part').findall('measure'):
+            notes = []
+            for note in measure.findall('note'):
+                
+                if note.find('pitch') is None:
+                    pitch = "REST"
+                
+                else:
+                    alteration_num = 0 if note.find('pitch').find('alter') is None else note.find('pitch').find('alter').text
+                    alteration = alterations[int(alteration_num)]
+                    tentative_pitch = note.find('pitch').find('step').text + str(alteration)
+                    normalized_pitch = pitch_num2text[pitch_text2num[tentative_pitch]]
+                    pitch =  normalized_pitch + '_' + str(note.find('pitch').find('octave').text)
+                    
+                dur = note.find('duration').text
+                str_note = dur + '_' + pitch
+
+                notes.append( str_note )
+            structure.append(notes)
+        return self.structure
+        
+    def __str__(self):
+        return str(self.structure)
 
 class Chord():
     

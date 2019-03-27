@@ -22,7 +22,7 @@ def create_simplekind_dictionary():
     dump(simple_kind, open('maps/simple_kind.txt', 'wb'))
 
 def create_word_dictionary():
-    directory = "XML_Tunes/"
+    directory = "iReal/"
 
     superstructure = []
     for file in listdir(directory):

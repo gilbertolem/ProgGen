@@ -32,7 +32,7 @@ epochs = 300
 ######## CREATE AND TRAIN MODEL ########
 
 # Load data
-xml_directory = "XML_Tunes/"
+xml_directory = "iReal/"
 filters = {'names':filter_names, 'frac':filter_fracs}
 dataset =  load_data(xml_directory, filters, batch_size) # X: (batch, sequence), W: (batch,)
 

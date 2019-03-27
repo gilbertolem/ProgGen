@@ -1,6 +1,6 @@
 *.pyc
 __pycache__
-// XML_Tunes/
+// iReal/
 .ipynb_checkpoints/
 .idea/
 // training_checkpoints/

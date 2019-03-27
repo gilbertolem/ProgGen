@@ -2,7 +2,7 @@ from os import listdir
 import xml.etree.ElementTree as ET
 import utils.classes as classes
 
-xml_directory = 'XML_Tunes/'
+xml_directory = 'iReal/'
 
 # Read all tunes from the xml_directory and create a list of Tune classes
 authors = []
