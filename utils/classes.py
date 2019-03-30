@@ -4,42 +4,70 @@ from pickle import load
 simple_kind = load(open('maps/simple_kind.txt', 'rb'))
 
 
-class Melody:
+class Measure:
+
+    def __init__(self, measure, shift):
+
+        self.chords = []
+        self.notes = []
+
+        for element in measure.getchildren():
+            if element.tag == 'harmony':
+                self.chords.append(Chord(element, shift=shift))
+                self.notes.append([])
+            elif element.tag == 'note':
+                self.notes[-1].append(Note(element, shift))
+
+    def get_chord_durations(self):
+        for chord, notes in zip(self.chords, self.notes):
+            dur = 0
+            for note in notes:
+                dur += note.dur
+            chord.dur = dur
+
+    def __str__(self):
+        for chord, notes in zip(self.chords, self.notes):
+            s = str(chord) + '\t'
+            for note in notes:
+                s += str(note) + ' '
+            s += '\n'
+        return s
+
+
+class Note:
+
+    def __init__(self, element, shift):
+
+        if element.find('pitch') is None:
+            self.pitch = "REST"
+        else:
+            alt = element.find('pitch').find('alter')
+            alteration_num = 0 if alt is None else int(alt.text)
+            alteration = alterations[alteration_num]
+            tentative_pitch = element.find('pitch').find('step').text + str(alteration)
+            normalized_pitch = pitch_num2text[(pitch_text2num[tentative_pitch] + shift) % 12]
+            self.pitch = normalized_pitch + '_' + str(element.find('pitch').find('octave').text)
+
+        self.dur = element.find('duration').text
+
+    def __str__(self):
+        return self.dur + '_' + self.pitch
+
+
+class Tune:
     
     def __init__(self, tree, shift=0):
         
         self.shift = shift
         self.title = tree.find('work').find('work-title').text
         
-        self.structure = self.get_structure(tree)
-        
-    def get_structure(self, tree):
-        
-        structure = []
-        for measure in tree.find('part').findall('measure'):
-            notes = []
-            for note in measure.findall('note'):
-                
-                if note.find('pitch') is None:
-                    pitch = "REST"
-                
-                else:
-                    alt = note.find('pitch').find('alter')
-                    alteration_num = 0 if alt is None else alt.text
-                    alteration = alterations[int(alteration_num)]
-                    tentative_pitch = note.find('pitch').find('step').text + str(alteration)
-                    normalized_pitch = pitch_num2text[pitch_text2num[tentative_pitch]]
-                    pitch = normalized_pitch + '_' + str(note.find('pitch').find('octave').text)
-                    
-                dur = note.find('duration').text
-                str_note = dur + '_' + pitch
-
-                notes.append(str_note)
-            structure.append(notes)
-        return self.structure
+        self.structure = [Measure(measure, shift) for measure in tree.find('part').findall('measure')]
         
     def __str__(self):
-        return str(self.structure)
+        s = ''
+        for m in self.structure:
+            s += str(m) + '\n'
+        return s
 
 
 def get_kind_text(harmony):
@@ -53,27 +81,42 @@ def get_kind_text(harmony):
     return kind_text
 
 
+def get_kind_text_2(harmony):
+    kind = harmony.find('kind').text
+    if kind == 'major':
+        return 'maj'
+    elif kind == 'minor':
+        return 'm'
+    elif kind == 'dominant':
+        return '7'
+    else:
+        print("KIND: {}".format(kind))
+        raise NotImplementedError
+
+
 class Chord:
-    
-    def __init__(self, harmony, note, shift):
-        
-        # Duration of the chord (whole, half, etc.)
-        dur = str(durations[note.find('type').text])
-        
+
+    def __init__(self, harmony, note=None, shift=0):
+
         # Get text of the root of the chord (note plus alteration)
         alt = harmony.find('root').find('root-alter')
         pitch_alt = 0 if alt is None else alt.text
         pitch_text = harmony.find('root').find('root-step').text + alterations[int(pitch_alt)]
-        pitch_text = pitch_num2text[(pitch_text2num[pitch_text] + shift) % 12]
-        
-        # Kind of chord (m, maj7, sus4, etc.)
-        kind_text = get_kind_text(harmony)
-        simple_kind_text = simple_kind[kind_text]
-        
-        self.text = dur + pitch_text + '_' + simple_kind_text
+        self.pitch_text = pitch_num2text[(pitch_text2num[pitch_text] + shift) % 12]
+
+        if note is None:
+            self.dur = ''
+            # Kind of chord (m, maj7, sus4, etc.)
+            self.simple_kind_text = get_kind_text_2(harmony)
+        else:
+            # Duration of the chord (whole, half, etc.)
+            self.dur = str(durations[note.find('type').text])
+            # Kind of chord (m, maj7, sus4, etc.)
+            kind_text = get_kind_text(harmony)
+            self.simple_kind_text = simple_kind[kind_text]
 
     def __str__(self):
-        return self.text
+        return self.dur + self.pitch_text + '_' + self.simple_kind_text
 
 
 def get_repeat(measure):
@@ -119,7 +162,7 @@ def get_key(tree):
                 return (fifths*7) % 12
 
 
-class Tune:
+class Progression:
     
     def __init__(self, tree, shift=0):
         

@@ -94,7 +94,7 @@ def musicxml2tunes(xml_directory, filters):
     tune_classes = []
     for file in listdir(xml_directory):
         tree = ET.parse(xml_directory + file)
-        tune = classes.Tune(tree)
+        tune = classes.Progression(tree)
 
         # Get index within the name list
         idx = weight_idx(tune, names)
@@ -103,7 +103,7 @@ def musicxml2tunes(xml_directory, filters):
         else:
             class_count[idx] += 12
             for shift in range(12):
-                tunes.append(classes.Tune(tree, shift))
+                tunes.append(classes.Progression(tree, shift))
                 tune_classes.append(idx)
             print("\t\tAdded: {}".format(tunes[-1].title))
 

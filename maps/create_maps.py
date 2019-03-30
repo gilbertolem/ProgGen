@@ -28,7 +28,7 @@ def create_word_dictionary():
     for file in listdir(directory):
         for shift in range(12):
             tree = ET.parse(directory + file)
-            t = classes.Tune(tree, shift)
+            t = classes.Progression(tree, shift)
             superstructure += t.structure
 
     different_words = list(set(superstructure))

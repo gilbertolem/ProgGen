@@ -9,7 +9,7 @@ authors = []
 styles = []
 for file in listdir(xml_directory):
     tree = ET.parse(xml_directory + file)
-    tune = classes.Tune(tree)
+    tune = classes.Progression(tree)
 
     authors.append(tune.author)
     styles.append(tune.style)

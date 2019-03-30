@@ -27,7 +27,9 @@ def generate_progression(initial_chord="4C_maj", tune_len=32, top=1, directory=N
     predictions = [input_id]
     
     structure = [words_num2text[input_id]]
-    
+
+    print("\nGENERATING PROGRESSION...")
+
     current_length = 0
     while current_length < tune_len:
         model.reset_states()    
@@ -44,7 +46,7 @@ def generate_progression(initial_chord="4C_maj", tune_len=32, top=1, directory=N
         if pred_id > 0:
             structure.append(pred_char)
             predictions.append(pred_id)
-        
+
         current_length = GenProgression(structure).n_bars
         
     return GenProgression(structure)

@@ -25,7 +25,7 @@ dropout_fc = 0.0
 
 # Training parameters
 lr = 1e-1
-epochs = 100
+epochs = 5
 
 # CREATE AND TRAIN MODEL
 
